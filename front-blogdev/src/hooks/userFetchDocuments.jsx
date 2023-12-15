@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase/config";
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  where,
-  QuerySnapshot,
-} from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
 export const userFetchDocuments = (
   docCollection,
@@ -16,45 +9,56 @@ export const userFetchDocuments = (
 ) => {
   const [documents, setDocuments] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(null);
-
-  const [cancelled, setCancelled] = useState(false)
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
-        if(cancelled){
-            return;
+    const loadData = async () => {
+      setLoading(true);
+
+      try {
+        const collectionRef = collection(db, docCollection);
+
+        let q;
+
+        if (search) {
+          q = query(
+            collectionRef,
+            orderBy("createAt", "desc"),
+            where("tags", "array-contains", search)
+          );
+        } else if (uid) {
+          q = query(
+            collectionRef,
+            orderBy("createAt", "desc"),
+            where("uid", "==", uid)
+          );
+        } else {
+          q = query(collectionRef, orderBy("createAt", "desc"));
         }
 
-        setLoading(true)
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          const mappedDocs = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setDocuments(mappedDocs);
+        });
 
-        const collectionRef = await collection(db, docCollection)
+        return () => unsubscribe();
+      } catch (error) {
+        console.error(error);
+        setError(error.message);
+      }
 
-        try{
-            let q
+      setLoading(false);
+    };
 
-            if (search) {
-                q = await query(collectionRef, where("tags", "array-contains", search),orderBy("createAt", "desc"))
-            }else if(uid){
-                q = await query(collectionRef, where("uid", "==", uid),orderBy("createAt", "desc"))
-            }else{
-                q = await query(collectionRef, orderBy("createAt", "desc"))
-            }
+    loadData();
+  }, [docCollection, search, uid]);
 
-            await onSnapshot(q,(querySnapshot) => {
-                setDocuments(
-                    querySnapshot.docs.map (doc) = ({
-                        id: doc.id,
-                        ...doc.data(),
-                    })
-                )
-            })
-
-        }catch(error){
-            console.log error
-            setError (error.message)
-        }
-        setLoading
-    }
-  })
+  return {
+    documents,
+    loading,
+    error,
+  };
 };
