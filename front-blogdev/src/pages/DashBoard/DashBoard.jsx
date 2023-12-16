@@ -1,58 +1,59 @@
-import React, { useEffect, useState } from "react";
-import Search from "./Search";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthValue } from "../../context/AuthContext";
 import { userFetchDocuments } from "../../hooks/userFetchDocuments";
 import { userDeleteDocument } from "../../hooks/userDeleteDocument";
+import styles from "./DashBoard.module.css";
 
-function DashBoard() {
+const DashBoard = () => {
   const { user } = useAuthValue();
-  const navigate = useNavigate();
+  const uid = user.uid;
 
-  // Utilize a função userFetchDocuments para obter as postagens
-  const { documents, loading, error } = userFetchDocuments(
-    "posts",
-    null,
-    user.uid
-  );
-
-  useEffect(() => {
-    // Se o usuário não estiver autenticado, redirecione para a página de login
-    if (!user) {
-      navigate("/login");
-    }
-  }, [user, navigate]);
-
-  const handleDelete = (postId) => {
-    const { deleteDocument } = userDeleteDocument("posts", postId);
-    deleteDocument();
-  };
+  const { documents: posts } = userFetchDocuments("posts", null, uid);
+  console.log(posts);
+  console.log(uid);
+  const { deleteDocument } = userDeleteDocument("posts");
 
   return (
-    <div>
+    <div className={styles.dashboard}>
       <h2>Dashboard</h2>
-      <Search />
+      <p>Gerencie suas postagens</p>
 
-      {loading && <p>Carregando postagens...</p>}
-      {error && <p>Ocorreu um erro ao buscar as postagens: {error}</p>}
-      {documents && (
-        <ul>
-          {documents.map((post) => (
-            <li key={post.id}>
-              <h3>{post.title}</h3>
-              <p>{post.body}</p>
-              <p>Tags: {post.tags.join(", ")}</p>
-              {user && user.uid === post.uid && (
-                <button type="button" onClick={() => handleDelete(post.id)}>
-                  Excluir
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+      {posts && posts.length === 0 ? (
+        <div className={styles.noposts}>
+          <p>Você não tem tem postagem</p>
+          <Link to="/post/create" className="btn">
+            Criar Postagem
+          </Link>
+        </div>
+      ) : (
+        <div className={styles.post_header}>
+          <span>Título</span>
+          <span>Ações</span>
+        </div>
       )}
+
+      {posts &&
+        posts.map((post) => (
+          <div>
+            <p>{post.title}</p>
+            <div className={styles.actions}>
+              <Link to={`/posts/${post.id}`} className="btn btn-outline">
+                Ver
+              </Link>
+              <Link to={`/posts/edit${post.id}`} className="btn btn-outline">
+                Editar
+              </Link>
+              <button
+                onClick={() => deleteDocument(post.id)}
+                className="btn btn-red"
+              >
+                Deletar
+              </button>
+            </div>
+          </div>
+        ))}
     </div>
   );
-}
+};
 
 export default DashBoard;

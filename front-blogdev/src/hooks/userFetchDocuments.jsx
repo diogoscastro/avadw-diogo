@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase/config";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  where,
+} from "firebase/firestore";
 
 export const userFetchDocuments = (
   docCollection,
@@ -9,12 +15,12 @@ export const userFetchDocuments = (
 ) => {
   const [documents, setDocuments] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
+    let unsubscribe;
 
+    const fetchData = async () => {
       try {
         const collectionRef = collection(db, docCollection);
 
@@ -23,37 +29,48 @@ export const userFetchDocuments = (
         if (search) {
           q = query(
             collectionRef,
-            orderBy("createAt", "desc"),
+            orderBy("createdAt", "desc"),
             where("tags", "array-contains", search)
           );
         } else if (uid) {
           q = query(
             collectionRef,
-            orderBy("createAt", "desc"),
+            orderBy("createdAt", "desc"),
             where("uid", "==", uid)
           );
         } else {
-          q = query(collectionRef, orderBy("createAt", "desc"));
+          q = query(collectionRef, orderBy("createdAt", "desc"));
         }
 
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-          const mappedDocs = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setDocuments(mappedDocs);
+        console.log("Query:", q);
+
+        unsubscribe = onSnapshot(q, (querySnapshot) => {
+          console.log(
+            "Query Snapshot:",
+            querySnapshot.docs.map((doc) => doc.data())
+          );
+          setDocuments(
+            querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+          );
         });
-
-        return () => unsubscribe();
       } catch (error) {
-        console.error(error);
+        console.error("Fetch Data Error:", error);
         setError(error.message);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    loadData();
+    fetchData();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [docCollection, search, uid]);
 
   return {

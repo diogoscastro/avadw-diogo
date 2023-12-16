@@ -1,38 +1,46 @@
 import React from "react";
-import Search from "./Search";
-import { useAuthValue } from "../../context/AuthContext";
 import { userFetchDocuments } from "../../hooks/userFetchDocuments";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import PostDetail from "../../components/PostDetail";
+import styles from "./Home.module.css";
 
-function Home() {
-  const { user } = useAuthValue();
+const Home = () => {
+  const { documents: posts, loading } = userFetchDocuments("posts");
+  const navigate = useNavigate();
 
-  // Use a função userFetchDocuments para buscar todas as postagens
-  const { documents, loading, error } = userFetchDocuments("posts");
+  const [query, setQuery] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (query) {
+      return navigate(`/search?q=${query}`);
+    }
+  };
 
   return (
-    <div>
-      <h1>Bem-vindo à Página Inicial</h1>
-
-      {/* Adicione o componente Search aqui */}
-      <Search />
-
-      {/* Lista de postagens */}
-      {loading && <p>Carregando postagens...</p>}
-      {error && <p>Ocorreu um erro ao buscar as postagens: {error}</p>}
-      {documents && (
-        <ul>
-          {documents.map((post) => (
-            <li key={post.id}>
-              <h3>{post.title}</h3>
-              <p>Por: {post.createBy}</p>
-              <p>{post.body}</p>
-              <p>Tags: {post.tags.join(", ")}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <>
+      <div className={styles.home}>
+        <h1>Bem-vindo à Página Inicial</h1>
+        <form className={styles.search_form} onSubmit={handleSubmit}>
+          <input type="text" onChange={(e) => setQuery(e.target.value)} />
+          <button className="btn btn-dark">Pesquisar</button>
+        </form>
+        <div className="post-list">
+          {loading && <p>Carregando...</p>}
+          {posts && posts.length === 0 && (
+            <div>
+              <p>Nenhuma postagem encontrada</p>
+              <Link to="/posts/create">Criar postagem</Link>
+            </div>
+          )}
+          {posts &&
+            posts.map((post) => <PostDetail key={post.id} post={post} />)}
+        </div>
+      </div>
+    </>
   );
-}
+};
 
 export default Home;

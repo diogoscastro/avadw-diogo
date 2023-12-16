@@ -3,28 +3,33 @@ import { db } from "../firebase/config";
 import { doc, getDoc } from "firebase/firestore";
 
 export const userFetchDocument = (docCollection, id) => {
+  // Renomeia para useFetchDocument
   const [document, setDocument] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Inicia com loading como true
 
   useEffect(() => {
     const loadDocument = async () => {
-      setLoading(true);
       try {
-        const docRef = await (db, docCollection, id);
+        const docRef = doc(db, docCollection, id); // Corrige a criação da referência ao documento
         const docSnap = await getDoc(docRef);
 
-        setDocument(docSnap.data());
+        if (docSnap.exists()) {
+          setDocument({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          setError("Documento não encontrado.");
+        }
       } catch (error) {
-        console.log(error);
+        console.error(error);
         setError(error.message);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     loadDocument();
   }, [docCollection, id]);
 
-  console.log(document);
   return {
     document,
     loading,

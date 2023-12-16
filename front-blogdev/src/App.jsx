@@ -13,7 +13,11 @@ import Register from "./pages/Register/Register";
 import Login from "./pages/Login/Login";
 import load from "./assets/loading.gif";
 import CreatePost from "./pages/CreatePost/CreatePost";
-import Dashboard from "./Dashboard/Dashboard";
+import Dashboard from "./pages/DashBoard/DashBoard";
+import PostDetail from "./components/PostDetail";
+import Post from "./pages/Post/Post";
+import Search from "./pages/Search/Search";
+import EditPost from "./pages/EditPost/EditPost";
 
 function App() {
   const [user, setUser] = useState(undefined);
@@ -46,8 +50,20 @@ function App() {
               <Route path="/about" element={<About />}></Route>
               <Route path="/register" element={<Register />}></Route>
               <Route path="/login" element={<Login />} />
-              <Route path="/post/create" element={<CreatePost />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route
+                path="/post/create"
+                element={user ? <CreatePost /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/posts/edit/:id"
+                element={user ? <EditPost /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/dashboard"
+                element={user ? <Dashboard /> : <Navigate to="/login" />}
+              />
+              <Route path="posts/:id" element={<Post />} />
+              <Route path="/search" element={<Search />} />
             </Routes>
           </div>
           <Footer />

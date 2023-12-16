@@ -1,40 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect, useReducer } from "react";
 import { db } from "../firebase/config";
 import { doc, updateDoc } from "firebase/firestore";
 
-export const userUpdateDocument = (docCollection, docId) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [response, setResponse] = useState(null);
+const initialState = {
+  loading: null,
+  error: null,
+};
 
-  const updateDocument = async (data) => {
-    setLoading(true);
+const updateReducer = (state, action) => {
+  switch (action.type) {
+    case "LOADING":
+      return { loading: true, error: null };
+    case "UPDATE_DOC":
+      return { loading: false, error: null };
+    case "ERROR":
+      return { loading: false, error: action.error };
+    default:
+      return state;
+  }
+};
+
+export const userUpdateDocument = (docCollection) => {
+  const [response, dispatch] = useReducer(updateReducer, initialState);
+
+  const checkCancelBeforeDispatch = (action) => {
+    if (!cancelled) {
+      dispatch(action);
+    }
+  };
+
+  const updateDocument = async (data, uid) => {
+    checkCancelBeforeDispatch({ type: "LOADING" });
 
     try {
-      const docRef = doc(db, docCollection, docId);
-
-      await updateDoc(docRef, data);
-
-      setResponse({
-        success: true,
-        message: "Documento atualizado com sucesso.",
+      const docRef = await doc(db, docCollection, uid);
+      const updateDocument = await updateDoc(docRef, data);
+      checkCancelBeforeDispatch({
+        type: "UPDATED_DOC",
+        payload: updateDocument,
       });
     } catch (error) {
-      console.error(error);
-      setError(error.message);
-      setResponse({
-        success: false,
-        message: "Erro ao atualizar o documento.",
-      });
+      checkCancelBeforeDispatch({ type: "ERROR", payload: error.message });
     }
-
-    setLoading(false);
   };
 
-  return {
-    updateDocument,
-    loading,
-    error,
-    response,
-  };
+  useEffect(() => {
+    return () => setCancelled(true);
+  });
+  return { updateDocument, response };
 };

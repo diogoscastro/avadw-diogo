@@ -1,37 +1,53 @@
 import { useState } from "react";
+import { useEffect, useReducer } from "react";
 import { db } from "../firebase/config";
 import { doc, deleteDoc } from "firebase/firestore";
 
-export const userDeleteDocument = (docCollection, docId) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [response, setResponse] = useState(null);
+const initialState = {
+  loading: null,
+  error: null,
+};
 
-  const deleteDocument = async () => {
-    setLoading(true);
+const deleteReducer = (state, action) => {
+  switch (action.type) {
+    case "LOADING":
+      return { loading: true, error: null };
+    case "DELETED_DOC":
+      return { loading: false, error: null };
+    case "ERROR":
+      return { loading: false, error: action.error };
+    default:
+      return state;
+  }
+};
+
+export const userDeleteDocument = (docCollection) => {
+  const [response, dispatch] = useReducer(deleteReducer, initialState);
+
+  const [cancelled, setCancelled] = useState(false);
+
+  const checkCancelBeforeDispatch = (action) => {
+    if (!cancelled) {
+      dispatch(action);
+    }
+  };
+
+  const deleteDocument = async (id) => {
+    checkCancelBeforeDispatch({ type: "LOADING" });
 
     try {
-      const docRef = doc(db, docCollection, docId);
-
-      await deleteDoc(docRef);
-
-      setResponse({
-        success: true,
-        message: "Documento excluído com sucesso.",
+      const deleteDocument = await deleteDoc(doc(db, docCollection, id));
+      checkCancelBeforeDispatch({
+        type: "DELETED_DOC",
+        payload: deleteDocument,
       });
     } catch (error) {
-      console.error(error);
-      setError(error.message);
-      setResponse({ success: false, message: "Erro ao excluir o documento." });
+      checkCancelBeforeDispatch({ type: "ERROR", error });
     }
-
-    setLoading(false);
   };
 
-  return {
-    deleteDocument,
-    loading,
-    error,
-    response,
-  };
+  useEffect(() => {
+    return () => setCancelled(true);
+  }, []);
+  return { deleteDocument, response };
 };
