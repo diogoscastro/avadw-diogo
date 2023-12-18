@@ -12,7 +12,7 @@ function CreatePost() {
   const [formError, setFormError] = useState("");
 
   const { user } = useAuthValue();
-
+  console.log(user);
   const navigate = useNavigate();
 
   const { insertDocument, response } = userInsertDocument("posts");

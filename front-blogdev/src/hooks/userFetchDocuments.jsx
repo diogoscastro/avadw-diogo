@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase/config";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  where,
+} from "firebase/firestore";
 
 export const userFetchDocuments = (
   docCollection,
@@ -13,11 +19,9 @@ export const userFetchDocuments = (
 
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      const collectionRef = collection(db, docCollection);
 
       try {
-        const collectionRef = collection(db, docCollection);
-
         let q;
 
         if (search) {

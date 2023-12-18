@@ -3,31 +3,21 @@ import { db } from "../firebase/config";
 import { doc, updateDoc } from "firebase/firestore";
 
 export const userUpdateDocument = (docCollection, docId) => {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [response, setResponse] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const updateDocument = async (data) => {
+  const updateDocument = async (newData) => {
     setLoading(true);
 
     try {
       const docRef = doc(db, docCollection, docId);
-
-      await updateDoc(docRef, data);
-
-      setResponse({
-        success: true,
-        message: "Documento atualizado com sucesso.",
-      });
+      const documentUpdated = await updateDoc(docRef, newData);
+      setLoading(false);
+      return documentUpdated;
     } catch (error) {
       console.error(error);
       setError(error.message);
-      setResponse({
-        success: false,
-        message: "Erro ao atualizar o documento.",
-      });
     }
-
     setLoading(false);
   };
 
@@ -35,6 +25,5 @@ export const userUpdateDocument = (docCollection, docId) => {
     updateDocument,
     loading,
     error,
-    response,
   };
 };

@@ -1,4 +1,3 @@
-import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { userAuthentication } from "../hooks/userAuthentication";
 import { useAuthValue } from "../context/AuthContext";
@@ -12,7 +11,8 @@ const Navbar = () => {
     <>
       <nav className={styles.navbar}>
         <NavLink to="/" className={styles.brand}>
-          Blog <span>Dev</span>
+          Blog <span>Dev</span>{" "}
+          <code>{user && user.displayName && ` - ${user.displayName}`}</code>
         </NavLink>
         <ul className={styles.links_list}>
           <li>
@@ -81,7 +81,13 @@ const Navbar = () => {
           </li>
           {user && (
             <li>
-              <button className={styles.logout} onClick={logout}>
+              <button
+                className={styles.logout}
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                }}
+              >
                 Exit
               </button>
             </li>

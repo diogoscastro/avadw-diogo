@@ -1,38 +1,70 @@
-import React from "react";
-import Search from "./Search";
-import { useAuthValue } from "../../context/AuthContext";
+import React, { useState, useEffect } from "react";
+import CardPost from "../../components/CardPost";
+import { useNavigate } from "react-router-dom";
 import { userFetchDocuments } from "../../hooks/userFetchDocuments";
+import styles from "./Home.module.css";
 
-function Home() {
-  const { user } = useAuthValue();
+const Home = () => {
+  const navigate = useNavigate();
+  const docCollection = "posts";
+  const { documents, loading, error } = userFetchDocuments(
+    docCollection,
+    null,
+    null
+  );
+  const [search, setSearch] = useState("");
+  const [documentsFilter, setDocumentsFilter] = useState([]);
 
-  // Use a função userFetchDocuments para buscar todas as postagens
-  const { documents, loading, error } = userFetchDocuments("posts");
+  useEffect(() => {
+    setDocumentsFilter(documents);
+  }, [documents]);
+
+  const handleOpenPost = (id) => {
+    navigate(`/post/${id}`);
+  };
+
+  const handleFilter = () => {
+    setDocumentsFilter(
+      documents
+        ? documents.filter((doc) =>
+            doc.tags.some((tag) =>
+              tag.toLowerCase().includes(search.toLowerCase())
+            )
+          )
+        : []
+    );
+  };
 
   return (
-    <div>
-      <h1>Bem-vindo à Página Inicial</h1>
-
-      {/* Adicione o componente Search aqui */}
-      <Search />
-
-      {/* Lista de postagens */}
-      {loading && <p>Carregando postagens...</p>}
-      {error && <p>Ocorreu um erro ao buscar as postagens: {error}</p>}
-      {documents && (
-        <ul>
-          {documents.map((post) => (
-            <li key={post.id}>
-              <h3>{post.title}</h3>
-              <p>Por: {post.createBy}</p>
-              <p>{post.body}</p>
-              <p>Tags: {post.tags.join(", ")}</p>
-            </li>
+    <div className={styles.home}>
+      <h1>Veja as nossas postagens mais recentes</h1>
+      <div className={styles.search}>
+        <input
+          type="text"
+          placeholder="Ou busque por tags..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button className="btn btn-dark" onClick={handleFilter}>
+          Pesquisar
+        </button>
+      </div>
+      <div className="post-list">
+        {documentsFilter &&
+          documentsFilter.map((doc, index) => (
+            <CardPost
+              key={index}
+              title={doc.title}
+              image={doc.image}
+              createBy={doc.createBy}
+              tags={doc.tags}
+              onOpen={() => handleOpenPost(doc.id)}
+            />
           ))}
-        </ul>
-      )}
+        {documentsFilter && documentsFilter.length === 0 && <h2>Sem posts</h2>}
+      </div>
     </div>
   );
-}
+};
 
 export default Home;

@@ -13,7 +13,9 @@ import Register from "./pages/Register/Register";
 import Login from "./pages/Login/Login";
 import load from "./assets/loading.gif";
 import CreatePost from "./pages/CreatePost/CreatePost";
-import Dashboard from "./Dashboard/Dashboard";
+import DashBoard from "./pages/DashBoard/DashBoard";
+import EditPost from "./pages/EditPost/EditPost";
+import Post from "./pages/Post/Post";
 
 function App() {
   const [user, setUser] = useState(undefined);
@@ -39,7 +41,7 @@ function App() {
     <>
       <AuthProvider value={{ user }}>
         <BrowserRouter>
-          <Navbar />
+          <Navbar value={user} />
           <div className="container">
             <Routes>
               <Route path="/" element={<Home />}></Route>
@@ -47,7 +49,9 @@ function App() {
               <Route path="/register" element={<Register />}></Route>
               <Route path="/login" element={<Login />} />
               <Route path="/post/create" element={<CreatePost />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<DashBoard />} />
+              <Route path="/posts/:id" element={<Post />} />
+              <Route path="/posts/edit/:id" element={<EditPost />} />
             </Routes>
           </div>
           <Footer />

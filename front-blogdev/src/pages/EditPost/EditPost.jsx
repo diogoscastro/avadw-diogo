@@ -1,129 +1,134 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuthValue } from "../../context/AuthContext";
 import { userFetchDocument } from "../../hooks/userFetchDocument";
 import { userUpdateDocument } from "../../hooks/userUpdateDocument";
+import styles from "./EditPost.module.css";
+import load from "../../assets/loading.gif";
 
-function EditPost() {
-  const { user } = useAuthValue();
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  // Utilize a função userFetchDocument para obter os detalhes da postagem
-  const { document, loading, error } = userFetchDocument("posts", id);
-
+const EditPost = () => {
   const [title, setTitle] = useState("");
   const [image, setImage] = useState("");
   const [body, setBody] = useState("");
-  const [tags, setTags] = useState("");
-  const [formError, setFormError] = useState("");
+  const [tags, setTags] = useState([]);
+  const [formError, setFormError] = useState(null);
 
-  // Utilize a função userUpdateDocument para atualizar a postagem
-  const { updateDocument, response } = userUpdateDocument("posts", id);
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { document, error, loading } = userFetchDocument("posts", id);
+  const { updateDocument } = userUpdateDocument("posts", id);
 
-  useEffect(() => {
-    // Se o usuário não estiver autenticado, redirecione para a página de login
-    if (!user) {
-      navigate("/login");
-    }
-
-    // Se o documento já foi carregado, preencha os estados do formulário
-    if (document) {
-      setTitle(document.title || "");
-      setImage(document.image || "");
-      setBody(document.body || "");
-      setTags(document.tags ? document.tags.join(", ") : "");
-    }
-  }, [user, navigate, document]);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError("");
 
-    try {
-      new URL(image);
-    } catch (error) {
-      setFormError("A imagem precisa ser uma URL válida");
+    if (!title || !image || !body || !tags) {
+      setFormError("Preencha todos os campos");
+      return;
     }
 
-    const tagsArray = tags.split(",").map((tag) => tag.trim().toLowerCase());
-
-    if (!title || !tags || !body) {
-      setFormError("Por favor, preencha com atenção todos os campos!");
-    }
-
-    if (formError) return;
-
-    // Utilize a função updateDocument para atualizar a postagem
-    updateDocument({
+    const newData = {
       title,
       image,
       body,
-      tags: tagsArray,
-    });
+      tags,
+    };
+
+    try {
+      setFormError(null);
+      await updateDocument(newData);
+      alert("Post atualizado com sucesso");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error(error);
+      setFormError(error.message);
+    }
   };
 
+  useEffect(() => {
+    if (document) {
+      setTitle(document.title);
+      setImage(document.image);
+      setBody(document.body);
+      setTags(document.tags);
+    }
+  }, [document]);
+
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <img src={load} alt="loading" />
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h2>Editar Postagem</h2>
-      {loading && <p>Carregando postagem...</p>}
-      {error && <p>Ocorreu um erro ao buscar a postagem: {error}</p>}
-      {document && (
-        <form onSubmit={handleSubmit}>
-          <label>
-            <span>Título:</span>
-            <input
-              type="text"
-              name="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            <span>URL da imagem:</span>
-            <input
-              type="text"
-              name="image"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            <span>Conteúdo da Postagem:</span>
-            <textarea
-              name="body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            <span>Tags:</span>
-            <input
-              type="text"
-              name="tags"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              required
-            />
-          </label>
-          {!response.loading && (
-            <button type="submit">Atualizar Postagem</button>
-          )}
-          {response.loading && (
-            <button type="submit" disabled>
-              Atualizando...
-            </button>
-          )}
-          {response.error && (
-            <p className="error">{response.error || formError}</p>
-          )}
-        </form>
-      )}
+    <div className={styles.create_post}>
+      <form onSubmit={handleSubmit}>
+        <h2>Editando post: {document?.title}</h2>
+        <p style={{ marginBottom: "2em" }}>Altere os dados como desejar</p>
+        <label>
+          <span>Título:</span>
+          <input
+            type="text"
+            name="title"
+            id="title"
+            placeholder="Título da postagem"
+            onChange={(e) => setTitle(e.target.value)}
+            value={title}
+            required
+          />
+        </label>
+
+        <label>
+          <span>URL da imagem:</span>
+          <input
+            type="text"
+            name="image"
+            id="image"
+            placeholder="Endereço da imagem"
+            onChange={(e) => setImage(e.target.value)}
+            value={image}
+            required
+          />
+        </label>
+
+        <p>Preview da imagem atual:</p>
+        <img
+          src={document?.image}
+          alt="preview da imagem"
+          style={{ maxWidth: "700px", margin: "0 auto", display: "block" }}
+        />
+
+        <label>
+          <span>Conteúdo da Postagem:</span>
+          <textarea
+            name="body"
+            id="body"
+            placeholder="Insira o conteúdo da sua postagem aqui"
+            onChange={(e) => setBody(e.target.value)}
+            value={body}
+            required
+          />
+        </label>
+
+        <label>
+          <span>Tags:</span>
+          <input
+            type="text"
+            name="tags"
+            id="tags"
+            placeholder="Insira suas tags separadas por vírgulas"
+            onChange={(e) => setTags(e.target.value.split(","))}
+            value={tags.join(",")}
+            required
+          />
+        </label>
+
+        <button className="btn" disabled={loading}>
+          {!loading ? "Editar" : "Atualizar..."}
+        </button>
+        {formError || (error && <p className="error">{formError || error}</p>)}
+      </form>
     </div>
   );
-}
-
+};
 export default EditPost;

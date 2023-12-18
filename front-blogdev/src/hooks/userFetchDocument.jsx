@@ -11,10 +11,10 @@ export const userFetchDocument = (docCollection, id) => {
     const loadDocument = async () => {
       setLoading(true);
       try {
-        const docRef = await (db, docCollection, id);
+        const docRef = await doc(db, docCollection, id);
         const docSnap = await getDoc(docRef);
 
-        setDocument(docSnap.data());
+        setDocument({ ...docSnap.data(), id: docSnap.id });
       } catch (error) {
         console.log(error);
         setError(error.message);

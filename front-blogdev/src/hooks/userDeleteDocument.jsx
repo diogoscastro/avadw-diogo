@@ -2,29 +2,21 @@ import { useState } from "react";
 import { db } from "../firebase/config";
 import { doc, deleteDoc } from "firebase/firestore";
 
-export const userDeleteDocument = (docCollection, docId) => {
-  const [loading, setLoading] = useState(false);
+export const userDeleteDocument = (docCollection) => {
+  const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
-  const [response, setResponse] = useState(null);
 
-  const deleteDocument = async () => {
+  const deleteDocument = async (id) => {
     setLoading(true);
 
     try {
-      const docRef = doc(db, docCollection, docId);
-
-      await deleteDoc(docRef);
-
-      setResponse({
-        success: true,
-        message: "Documento excluído com sucesso.",
-      });
+      const docRef = await doc(db, docCollection, id);
+      const documentDeleted = await deleteDoc(docRef);
+      return documentDeleted;
     } catch (error) {
       console.error(error);
       setError(error.message);
-      setResponse({ success: false, message: "Erro ao excluir o documento." });
     }
-
     setLoading(false);
   };
 
@@ -32,6 +24,5 @@ export const userDeleteDocument = (docCollection, docId) => {
     deleteDocument,
     loading,
     error,
-    response,
   };
 };

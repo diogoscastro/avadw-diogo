@@ -1,58 +1,59 @@
-import React, { useEffect, useState } from "react";
-import Search from "./Search";
-import { useNavigate } from "react-router-dom";
-import { useAuthValue } from "../../context/AuthContext";
+import React from "react";
+import styles from "./DashBoard.module.css";
 import { userFetchDocuments } from "../../hooks/userFetchDocuments";
 import { userDeleteDocument } from "../../hooks/userDeleteDocument";
+import { useAuthValue } from "../../context/AuthContext";
 
-function DashBoard() {
+const DashBoard = () => {
   const { user } = useAuthValue();
-  const navigate = useNavigate();
-
-  // Utilize a função userFetchDocuments para obter as postagens
-  const { documents, loading, error } = userFetchDocuments(
-    "posts",
+  const docCollection = "posts";
+  const { documents, error, loading } = userFetchDocuments(
+    docCollection,
     null,
     user.uid
   );
+  const { deleteDocument } = userDeleteDocument(docCollection);
 
-  useEffect(() => {
-    // Se o usuário não estiver autenticado, redirecione para a página de login
-    if (!user) {
-      navigate("/login");
+  const handleDelete = async (id) => {
+    try {
+      await deleteDocument(id);
+      alert("Post excluído com sucesso!");
+    } catch (error) {
+      console.log(error);
     }
-  }, [user, navigate]);
-
-  const handleDelete = (postId) => {
-    const { deleteDocument } = userDeleteDocument("posts", postId);
-    deleteDocument();
   };
 
   return (
-    <div>
+    <div className={styles.dashboard}>
       <h2>Dashboard</h2>
-      <Search />
-
-      {loading && <p>Carregando postagens...</p>}
-      {error && <p>Ocorreu um erro ao buscar as postagens: {error}</p>}
-      {documents && (
-        <ul>
-          {documents.map((post) => (
-            <li key={post.id}>
-              <h3>{post.title}</h3>
-              <p>{post.body}</p>
-              <p>Tags: {post.tags.join(", ")}</p>
-              {user && user.uid === post.uid && (
-                <button type="button" onClick={() => handleDelete(post.id)}>
-                  Excluir
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <p>Gerencie seus posts</p>
+      <div className={styles.post_header}>
+        <span>Título</span>
+        <span>Ações</span>
+      </div>
+      {documents &&
+        documents.map((doc, index) => (
+          <div className={styles.post_row} key={index}>
+            <p>{doc.title}</p>
+            <div>
+              <a className="btn btn-outline" href={`/posts/${doc.id}`}>
+                Ver
+              </a>
+              <a className="btn btn-outline" href={`/posts/edit/${doc.id}`}>
+                Editar
+              </a>
+              <button
+                className="btn btn-outline"
+                onClick={() => handleDelete(doc.id)}
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        ))}
+      {documents && documents.length === 0 && <h2>Sem posts</h2>}
     </div>
   );
-}
+};
 
 export default DashBoard;
